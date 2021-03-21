@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Management;
 using System.Runtime.InteropServices;
@@ -169,6 +170,8 @@ namespace GenshinBalladsOfBreezeAider
                 float dpiX = DpiScaleX;
                 float dpiY = DpiScaleY;
 
+                Dictionary<Keys, DateTime> dicKeysNextPressTime = new Dictionary<Keys, DateTime>();
+
                 while (working)
                 {
                     int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * dpiX);
@@ -178,14 +181,14 @@ namespace GenshinBalladsOfBreezeAider
                     Graphics memoryGraphics = Graphics.FromImage(memoryImage);
                     memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
 
-                    StartAutoPressKey(memoryImage, 0.253125, 0.37685, Keys.W);
-                    StartAutoPressKey(memoryImage, 0.253125, 0.823148, Keys.S);
-                    StartAutoPressKey(memoryImage, 0.127083, 0.6, Keys.A);
-                    StartAutoPressKey(memoryImage, 0.378125, 0.6, Keys.D);
-                    StartAutoPressKey(memoryImage, 0.74739583, 0.37685, Keys.I);
-                    StartAutoPressKey(memoryImage, 0.74739583, 0.823148, Keys.K);
-                    StartAutoPressKey(memoryImage, 0.62135416, 0.6, Keys.J);
-                    StartAutoPressKey(memoryImage, 0.872917, 0.6, Keys.L);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.37685, Keys.W);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.823148, Keys.S);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.127083, 0.6, Keys.A);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.378125, 0.6, Keys.D);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.74739583, 0.37685, Keys.I);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.74739583, 0.823148, Keys.K);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.62135416, 0.6, Keys.J);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.872917, 0.6, Keys.L);
 
                     memoryGraphics.Dispose();
                     memoryImage.Dispose();
@@ -194,6 +197,21 @@ namespace GenshinBalladsOfBreezeAider
         }
 
         bool wReady, sReady, aReady, dReady, iReady, kReady, jReady, lReady;
+
+        private void StartAutoPressKeyAndRecordCD(Dictionary<Keys, DateTime> dicKeysNextPressTime, Bitmap bmp, double scaleX, double scaleY, Keys key)
+        {
+            if (dicKeysNextPressTime.ContainsKey(key))
+            {
+                if (dicKeysNextPressTime[key] < DateTime.Now)
+                {
+                    dicKeysNextPressTime[key] = StartAutoPressKey(bmp, scaleX, scaleY, key);
+                }
+            }
+            else
+            {
+                dicKeysNextPressTime.Add(key, StartAutoPressKey(bmp, scaleX, scaleY, key));
+            }
+        }
 
         private void SaveDebugImage()
         {
@@ -233,8 +251,9 @@ namespace GenshinBalladsOfBreezeAider
             }
         }
 
-        private void StartAutoPressKey(Bitmap bmp, double scaleX, double scaleY, Keys key)
+        private DateTime StartAutoPressKey(Bitmap bmp, double scaleX, double scaleY, Keys key)
         {
+            DateTime nextEnablePressTime;
             bool getReady = key switch
             {
                 Keys.W => wReady,
@@ -250,7 +269,7 @@ namespace GenshinBalladsOfBreezeAider
 
             int x = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
             int y = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
-            PressKey(ref getReady, bmp, x, y, key);
+            nextEnablePressTime = PressKey(ref getReady, bmp, x, y, key);
 
             switch (key)
             {
@@ -279,6 +298,7 @@ namespace GenshinBalladsOfBreezeAider
                     lReady = getReady;
                     break;
             }
+            return nextEnablePressTime;
         }
 
         private byte GetScancode(Keys key) => key switch
@@ -294,7 +314,7 @@ namespace GenshinBalladsOfBreezeAider
             _ => throw new Exception()
         };
 
-        private void PressKey(ref bool getReady, Bitmap bmp, int x, int y, Keys key)
+        private DateTime PressKey(ref bool getReady, Bitmap bmp, int x, int y, Keys key)
         {
             Color color = bmp.GetPixel(x, y);
             if (!getReady)
@@ -312,15 +332,15 @@ namespace GenshinBalladsOfBreezeAider
                     //getReady = false;  //连击不会显示黑色圈导致判定有问题, 现只用作判断是否开始音游
                     //byte code = GetScancode(key);
                     keybd_event(byteKey, 0, 0, 0);
-                    //WinIo.MykeyDown(byteKey);
                     //Invoke(new Action(() => debugTextBox.AppendText($"按下按键{((Keys)key).ToString()} ----{DateTime.Now}\r\n")));
                     Task.Delay(50).ContinueWith(_ =>
                     {
                         keybd_event(byteKey, 0, 2, 0);
-                        //WinIo.MykeyUp(byteKey);
                     });
+                    return DateTime.Now.AddMilliseconds(50);
                 }
             }
+            return DateTime.Now;
         }
     }
 }

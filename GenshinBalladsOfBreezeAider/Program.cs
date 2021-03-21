@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -16,7 +18,21 @@ namespace GenshinBalladsOfBreezeAider
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new frmMain());
+            WindowsIdentity identity = WindowsIdentity.GetCurrent();
+            WindowsPrincipal principal = new WindowsPrincipal(identity);
+            if (principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator))
+            {
+                Application.Run(new frmMain());
+            }
+            else
+            {
+                ProcessStartInfo startInfo = new ProcessStartInfo();
+                startInfo.FileName = Application.ExecutablePath;
+                startInfo.Arguments = string.Join(" ", "");
+                startInfo.Verb = "runas";
+                Process.Start(startInfo);
+                Application.Exit();
+            }
         }
     }
 }
