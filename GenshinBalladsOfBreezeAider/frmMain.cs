@@ -22,10 +22,6 @@ namespace GenshinBalladsOfBreezeAider
         [DllImport("user32.dll")]
         private static extern bool GetClientRect(IntPtr hwnd, out Rectangle lpRect);
 
-        [DllImport("user32")]
-        private static extern int GetSystemMetrics(int nIndex);
-
-
         [DllImport("user32.dll")]
         private static extern IntPtr GetDC(IntPtr ptr);
         [DllImport("gdi32.dll")]
@@ -73,6 +69,10 @@ namespace GenshinBalladsOfBreezeAider
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+#if DEBUG
+            btnDebugScreenshot.Visible = true;
+            debugTextBox.Visible = true;
+#endif
             FindGenshinProcess();
         }
 
@@ -115,7 +115,7 @@ namespace GenshinBalladsOfBreezeAider
 
                                 lblWindowType.Text = "全屏";
                                 lblWindowLocation.Text = $"(0,0)";
-                                lblWindowSize.Text = $"{genshinWindowWdith}×{genshinWindowHeight}";
+
                             }
                             else  //窗口化
                             {
@@ -134,9 +134,45 @@ namespace GenshinBalladsOfBreezeAider
 
                                 lblWindowType.Text = "窗口化";
                                 lblWindowLocation.Text = $"({genshinWindowX},{genshinWindowY})";
-                                lblWindowSize.Text = $"{genshinWindowHeight}×{genshinWindowHeight}";
-
                             }
+
+                            lblDpi.Text = $"{DpiScaleX * 100}%";
+
+                            if (genshinWindowWdith / 16 * 9 == genshinWindowHeight)
+                            {
+                                lblRatio.Text = "16:9";
+                                lblRatio.ForeColor = Color.Black;
+                                lblWarring.Text = "";
+
+                                if (DpiScaleX != 1)
+                                {
+                                    lblWarring.Text = "您显示设置-更改文本、应用等项目的大小不是100%，可能在坐标换算中产生偏移。";
+                                }
+                            }
+                            else
+                            {
+                                if (genshinWindowWdith / 16 * 10 == genshinWindowHeight)
+                                {
+                                    lblRatio.Text = "16:10";
+                                }
+                                else if (genshinWindowWdith / 4 * 3 == genshinWindowHeight)
+                                {
+                                    lblRatio.Text = "4:3";
+                                }
+                                else if (genshinWindowWdith / 5 * 4 == genshinWindowHeight)
+                                {
+                                    lblRatio.Text = "5:4";
+                                }
+                                else
+                                {
+                                    lblRatio.Text = "未知";
+                                }
+                                lblRatio.ForeColor = Color.Red;
+                                lblWarring.Text = "尚未适配当前分辨率，请切换到长宽比为16:9的分辨率";
+                            }
+
+                            lblWindowSize.Text = $"{genshinWindowWdith}×{genshinWindowHeight}";
+
                             btnStart.Enabled = true;
                         }
                         catch
@@ -197,6 +233,8 @@ namespace GenshinBalladsOfBreezeAider
         }
 
         bool wReady, sReady, aReady, dReady, iReady, kReady, jReady, lReady;
+
+        private void btnDebugScreenshot_Click(object sender, EventArgs e) => SaveDebugImage();
 
         private void StartAutoPressKeyAndRecordCD(Dictionary<Keys, DateTime> dicKeysNextPressTime, Bitmap bmp, double scaleX, double scaleY, Keys key)
         {
@@ -303,16 +341,18 @@ namespace GenshinBalladsOfBreezeAider
 
         private byte GetScancode(Keys key) => key switch
         {
-            Keys.W => Convert.ToByte("11"),
-            Keys.S => Convert.ToByte("1F"),
-            Keys.A => Convert.ToByte("1E"),
-            Keys.D => Convert.ToByte("20"),
-            Keys.I => Convert.ToByte("17"),
-            Keys.K => Convert.ToByte("25"),
-            Keys.J => Convert.ToByte("24"),
-            Keys.L => Convert.ToByte("26"),
+            Keys.W => Convert.ToByte(0x11),
+            Keys.S => Convert.ToByte(0x1F),
+            Keys.A => Convert.ToByte(0x1E),
+            Keys.D => Convert.ToByte(0x20),
+            Keys.I => Convert.ToByte(0x17),
+            Keys.K => Convert.ToByte(0x25),
+            Keys.J => Convert.ToByte(0x24),
+            Keys.L => Convert.ToByte(0x26),
             _ => throw new Exception()
         };
+
+        int i = 1;
 
         private DateTime PressKey(ref bool getReady, Bitmap bmp, int x, int y, Keys key)
         {
@@ -330,12 +370,15 @@ namespace GenshinBalladsOfBreezeAider
                 {
                     byte byteKey = (byte)key;
                     //getReady = false;  //连击不会显示黑色圈导致判定有问题, 现只用作判断是否开始音游
-                    //byte code = GetScancode(key);
-                    keybd_event(byteKey, 0, 0, 0);
-                    //Invoke(new Action(() => debugTextBox.AppendText($"按下按键{((Keys)key).ToString()} ----{DateTime.Now}\r\n")));
+                    byte code = GetScancode(key);
+                    keybd_event(byteKey, code, 0, 0);
+                    if (debugTextBox.Visible)
+                    {
+                        Invoke(new Action(() => debugTextBox.AppendText($"第{i++}次按下按键, 键为:{((Keys)key).ToString()} ----{DateTime.Now}\r\n")));
+                    }
                     Task.Delay(50).ContinueWith(_ =>
                     {
-                        keybd_event(byteKey, 0, 2, 0);
+                        keybd_event(byteKey, code, 2, 0);
                     });
                     return DateTime.Now.AddMilliseconds(50);
                 }
