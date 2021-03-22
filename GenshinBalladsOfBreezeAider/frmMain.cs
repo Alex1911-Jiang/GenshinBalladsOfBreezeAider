@@ -208,11 +208,12 @@ namespace GenshinBalladsOfBreezeAider
 
                 Dictionary<Keys, DateTime> dicKeysNextPressTime = new Dictionary<Keys, DateTime>();
 
+                int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * dpiX);
+                int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * dpiY);
+                Size s = new Size(width, height);
+
                 while (working)
                 {
-                    int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * dpiX);
-                    int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * dpiY);
-                    Size s = new Size(width, height);
                     Bitmap memoryImage = new Bitmap(width, height);
                     Graphics memoryGraphics = Graphics.FromImage(memoryImage);
                     memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
@@ -366,7 +367,7 @@ namespace GenshinBalladsOfBreezeAider
             }
             if (getReady)
             {
-                if (color.R == 255 && color.G > 170 && color.G < 230 && color.B > 60 && color.B < 70)
+                if (color.R > 240 && color.G > 210 && color.G < 240 && color.B > 50 && color.B < 80)
                 {
                     byte byteKey = (byte)key;
                     //getReady = false;  //连击不会显示黑色圈导致判定有问题, 现只用作判断是否开始音游
@@ -380,7 +381,7 @@ namespace GenshinBalladsOfBreezeAider
                     {
                         keybd_event(byteKey, code, 2, 0);
                     });
-                    return DateTime.Now.AddMilliseconds(50);
+                    return DateTime.Now.AddMilliseconds(100);
                 }
             }
             return DateTime.Now;
