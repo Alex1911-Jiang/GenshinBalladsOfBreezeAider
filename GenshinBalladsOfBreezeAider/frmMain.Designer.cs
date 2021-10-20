@@ -238,7 +238,7 @@ namespace GenshinBalladsOfBreezeAider
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "frmMain";
-            this.Text = "原神风物之歌辅助程序";
+            this.Text = "原神风物之歌/镜花听世辅助程序";
             this.groupGenshinProcess.ResumeLayout(false);
             this.groupGenshinProcess.PerformLayout();
             this.ResumeLayout(false);

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Management;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -42,6 +42,32 @@ namespace GenshinBalladsOfBreezeAider
         private int genshinWindowHeight = 0;
         private bool working = false;
 
+#if DEBUG //-- 调试用系统钩子 --
+        protected delegate int HookProc(int nCode, int wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        protected static extern int SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, int dwThreadId);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
+        protected static extern int CallNextHookEx(int idHook, int nCode, int wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
+        protected static extern int UnhookWindowsHookEx(int idHook);
+
+        [StructLayout(LayoutKind.Sequential)]
+        protected class KeyboardHookStruct
+        {
+            public int vkCode;
+            public int scanCode;
+            public int flags;
+            public int time;
+            public int dwExtraInfo;
+        }
+
+        protected int _handleToHook;
+        protected HookProc _hookCallback;
+#endif  //-- 调试用系统钩子 --
+
         public static float DpiScaleX
         {
             get
@@ -72,9 +98,35 @@ namespace GenshinBalladsOfBreezeAider
 #if DEBUG
             btnDebugScreenshot.Visible = true;
             debugTextBox.Visible = true;
+
+            _hookCallback = new HookProc(HookCallbackProcedure);
+            _handleToHook = SetWindowsHookEx(13, _hookCallback, Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().GetModules()[0]), 0);
 #endif
             FindGenshinProcess();
         }
+
+#if DEBUG
+        private int HookCallbackProcedure(int nCode, int wParam, IntPtr lParam)
+        {
+            KeyboardHookStruct keyboardHookStruct = (KeyboardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyboardHookStruct));
+            if (wParam == 0x100 || wParam == 0x104)  //KeyDown事件
+            {
+                switch (keyboardHookStruct.vkCode)
+                {
+                    case (int)Keys.F12:
+                        SaveDebugImage();
+                        break;
+                    case (int)Keys.F11:
+                        Invoke(new Action(() => debugTextBox.AppendText($"{DateTime.Now.ToString("HH:mm:ss fff")}\r\n")));
+                        break;
+                    case (int)Keys.F10:
+                        Start();
+                        break;
+                }
+            }
+            return 0;
+        }
+#endif
 
         private void FindGenshinProcess()
         {
@@ -123,9 +175,7 @@ namespace GenshinBalladsOfBreezeAider
                                 Rectangle rect = new Rectangle(tempRect.X + (tempRect.Width - clientRect.Width) - 3, tempRect.Y + (tempRect.Height - clientRect.Height) - 3, clientRect.Width, clientRect.Height);
 
                                 if (dpiX > 1 || DpiScaleY > 1)
-                                {
                                     rect = new Rectangle((int)Math.Round(rect.X * dpiX), (int)Math.Round(rect.Y * dpiY), (int)Math.Round(rect.Width * dpiX), (int)Math.Round(rect.Height * dpiY));
-                                }
 
                                 genshinWindowX = rect.X;
                                 genshinWindowY = rect.Y;
@@ -145,28 +195,18 @@ namespace GenshinBalladsOfBreezeAider
                                 lblWarring.Text = "";
 
                                 if (DpiScaleX != 1)
-                                {
                                     lblWarring.Text = "您显示设置-更改文本、应用等项目的大小不是100%，可能在坐标换算中产生偏移。";
-                                }
                             }
                             else
                             {
                                 if (genshinWindowWdith / 16 * 10 == genshinWindowHeight)
-                                {
                                     lblRatio.Text = "16:10";
-                                }
                                 else if (genshinWindowWdith / 4 * 3 == genshinWindowHeight)
-                                {
                                     lblRatio.Text = "4:3";
-                                }
                                 else if (genshinWindowWdith / 5 * 4 == genshinWindowHeight)
-                                {
                                     lblRatio.Text = "5:4";
-                                }
                                 else
-                                {
                                     lblRatio.Text = "未知";
-                                }
                                 lblRatio.ForeColor = Color.Red;
                                 lblWarring.Text = "尚未适配当前分辨率，请切换到长宽比为16:9的分辨率";
                             }
@@ -184,6 +224,11 @@ namespace GenshinBalladsOfBreezeAider
         }
 
         private void btnStart_Click(object sender, EventArgs e)
+        {
+            Start();
+        }
+
+        private void Start()
         {
             if (working)
             {
@@ -212,20 +257,22 @@ namespace GenshinBalladsOfBreezeAider
                 int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * dpiY);
                 Size s = new Size(width, height);
 
+                bool wHolding = false, sHolding = false, aHolding = false, dHolding = false, iHolding = false, kHolding = false, jHolding = false, lHolding = false;
+
                 while (working)
                 {
                     Bitmap memoryImage = new Bitmap(width, height);
                     Graphics memoryGraphics = Graphics.FromImage(memoryImage);
                     memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
 
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.37685, Keys.W);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.823148, Keys.S);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.127083, 0.6, Keys.A);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.378125, 0.6, Keys.D);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.74739583, 0.37685, Keys.I);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.74739583, 0.823148, Keys.K);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.62135416, 0.6, Keys.J);
-                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.872917, 0.6, Keys.L);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.37685, Keys.W, 0.2526, 0.461, ref wHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.823148, Keys.S, 0.253125, 0.773, ref sHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.127083, 0.6, Keys.A, 0.165625, 0.616, ref aHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.378125, 0.6, Keys.D, 0.340625, 0.616, ref dHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.74739583, 0.37685, Keys.I, 0.7475, 0.461, ref iHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.74739583, 0.823148, Keys.K, 0.7475, 0.773, ref kHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.62135416, 0.6, Keys.J, 0.659, 0.616, ref jHolding);
+                    StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.872917, 0.6, Keys.L, 0.835, 0.616, ref lHolding);
 
                     memoryGraphics.Dispose();
                     memoryImage.Dispose();
@@ -233,22 +280,20 @@ namespace GenshinBalladsOfBreezeAider
             });
         }
 
-        bool wReady, sReady, aReady, dReady, iReady, kReady, jReady, lReady;
-
         private void btnDebugScreenshot_Click(object sender, EventArgs e) => SaveDebugImage();
 
-        private void StartAutoPressKeyAndRecordCD(Dictionary<Keys, DateTime> dicKeysNextPressTime, Bitmap bmp, double scaleX, double scaleY, Keys key)
+        private void StartAutoPressKeyAndRecordCD(Dictionary<Keys, DateTime> dicKeysNextPressTime, Bitmap bmp, double scaleX, double scaleY, Keys key, double scaleHoldX, double scaleHoldY, ref bool holding)
         {
             if (dicKeysNextPressTime.ContainsKey(key))
             {
-                if (dicKeysNextPressTime[key] < DateTime.Now)
+                if (dicKeysNextPressTime[key] < DateTime.Now || holding)
                 {
-                    dicKeysNextPressTime[key] = StartAutoPressKey(bmp, scaleX, scaleY, key);
+                    dicKeysNextPressTime[key] = StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding);
                 }
             }
             else
             {
-                dicKeysNextPressTime.Add(key, StartAutoPressKey(bmp, scaleX, scaleY, key));
+                dicKeysNextPressTime.Add(key, StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding));
             }
         }
 
@@ -264,16 +309,24 @@ namespace GenshinBalladsOfBreezeAider
             Graphics memoryGraphics = Graphics.FromImage(memoryImage);
             memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
 
-            DrawDebugLine(0.253125, 0.37685, memoryImage);
-            DrawDebugLine(0.253125, 0.823148, memoryImage);
-            DrawDebugLine(0.127083, 0.6, memoryImage);
-            DrawDebugLine(0.378125, 0.6, memoryImage);
-            DrawDebugLine(0.74739583, 0.37685, memoryImage);
-            DrawDebugLine(0.74739583, 0.823148, memoryImage);
-            DrawDebugLine(0.62135416, 0.6, memoryImage);
-            DrawDebugLine(0.872917, 0.6, memoryImage);
+            //DrawDebugLine(0.253125, 0.37685, memoryImage);
+            //DrawDebugLine(0.253125, 0.823148, memoryImage);
+            //DrawDebugLine(0.127083, 0.6, memoryImage);
+            //DrawDebugLine(0.378125, 0.6, memoryImage);
+            //DrawDebugLine(0.74739583, 0.37685, memoryImage);
+            //DrawDebugLine(0.74739583, 0.823148, memoryImage);
+            //DrawDebugLine(0.62135416, 0.6, memoryImage);
+            //DrawDebugLine(0.872917, 0.6, memoryImage);
 
-            memoryImage.Save(Application.StartupPath + @"\text.jpg");
+            DrawDebugLine(0.2526, 0.461 - 0.3, memoryImage);
+            DrawDebugLine(0.165625, 0.616 - 0.3, memoryImage);
+            DrawDebugLine(0.253125, 0.773 - 0.3, memoryImage);
+            DrawDebugLine(0.340625, 0.616 - 0.3, memoryImage);
+            DrawDebugLine(0.7475, 0.461 - 0.3, memoryImage);
+            DrawDebugLine(0.659, 0.616 - 0.3, memoryImage);
+            DrawDebugLine(0.7475, 0.773 - 0.3, memoryImage);
+            DrawDebugLine(0.835, 0.616 - 0.3, memoryImage);
+            memoryImage.Save(Application.StartupPath + @"\test.jpg");
         }
 
         private void DrawDebugLine(double scaleX, double scaleY, Bitmap highDpiScreenshot)
@@ -290,98 +343,72 @@ namespace GenshinBalladsOfBreezeAider
             }
         }
 
-        private DateTime StartAutoPressKey(Bitmap bmp, double scaleX, double scaleY, Keys key)
+        private DateTime StartAutoPressKey(Bitmap bmp, double scaleX, double scaleY, Keys key, double scaleHoldX, double scaleHoldY, ref bool holding)
         {
-            DateTime nextEnablePressTime;
-            bool getReady = key switch
+            byte byteKey = (byte)key;
+            byte code = key switch
             {
-                Keys.W => wReady,
-                Keys.S => sReady,
-                Keys.A => aReady,
-                Keys.D => dReady,
-                Keys.I => iReady,
-                Keys.K => kReady,
-                Keys.J => jReady,
-                Keys.L => lReady,
+                Keys.W => Convert.ToByte(0x11),
+                Keys.S => Convert.ToByte(0x1F),
+                Keys.A => Convert.ToByte(0x1E),
+                Keys.D => Convert.ToByte(0x20),
+                Keys.I => Convert.ToByte(0x17),
+                Keys.K => Convert.ToByte(0x25),
+                Keys.J => Convert.ToByte(0x24),
+                Keys.L => Convert.ToByte(0x26),
                 _ => throw new Exception()
             };
 
-            int x = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
-            int y = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
-            nextEnablePressTime = PressKey(ref getReady, bmp, x, y, key);
-
-            switch (key)
+            if (holding)
             {
-                case Keys.W:
-                    wReady = getReady;
-                    break;
-                case Keys.S:
-                    sReady = getReady;
-                    break;
-                case Keys.A:
-                    aReady = getReady;
-                    break;
-                case Keys.D:
-                    dReady = getReady;
-                    break;
-                case Keys.I:
-                    iReady = getReady;
-                    break;
-                case Keys.K:
-                    kReady = getReady;
-                    break;
-                case Keys.J:
-                    jReady = getReady;
-                    break;
-                case Keys.L:
-                    lReady = getReady;
-                    break;
-            }
-            return nextEnablePressTime;
-        }
+                int xHold = (int)Math.Round(genshinWindowWdith * scaleHoldX) + genshinWindowX;
+                int yHold = (int)Math.Round(genshinWindowHeight * scaleHoldY) + genshinWindowY;
+                int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.3)) + genshinWindowY;
 
-        private byte GetScancode(Keys key) => key switch
-        {
-            Keys.W => Convert.ToByte(0x11),
-            Keys.S => Convert.ToByte(0x1F),
-            Keys.A => Convert.ToByte(0x1E),
-            Keys.D => Convert.ToByte(0x20),
-            Keys.I => Convert.ToByte(0x17),
-            Keys.K => Convert.ToByte(0x25),
-            Keys.J => Convert.ToByte(0x24),
-            Keys.L => Convert.ToByte(0x26),
-            _ => throw new Exception()
-        };
+                var colorHold = bmp.GetPixel(xHold, yHold);
+                var colorTail = bmp.GetPixel(xHold, yTail);
 
-        int i = 1;
-
-        private DateTime PressKey(ref bool getReady, Bitmap bmp, int x, int y, Keys key)
-        {
-            Color color = bmp.GetPixel(x, y);
-            if (!getReady)
-            {
-                if (color.R < 100 && color.G < 100 && color.B < 100)
+                if (colorHold.R > 220 && colorHold.G > 220 && colorHold.B > 210 && colorTail.B < 250 )
                 {
-                    getReady = true;
+                    keybd_event(byteKey, code, 2, 0);
+                    holding = false;
+                    BeginInvoke(new Action(() => debugTextBox.AppendText($"弹起按键:{key} ----{DateTime.Now}\r\n")));
+                    return DateTime.Now;
                 }
             }
-            if (getReady)
+            else
             {
+                int x = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
+                int y = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
+
+                Color color = bmp.GetPixel(x, y);
                 if (color.R > 240 && color.G > 210 && color.G < 240 && color.B > 50 && color.B < 80)
                 {
-                    byte byteKey = (byte)key;
-                    //getReady = false;  //连击不会显示黑色圈导致判定有问题, 现只用作判断是否开始音游
-                    byte code = GetScancode(key);
                     keybd_event(byteKey, code, 0, 0);
                     if (debugTextBox.Visible)
                     {
-                        Invoke(new Action(() => debugTextBox.AppendText($"第{i++}次按下按键, 键为:{((Keys)key).ToString()} ----{DateTime.Now}\r\n")));
+                        Invoke(new Action(() => debugTextBox.AppendText($"点按按键{key}----{DateTime.Now}\r\n")));
                     }
                     Task.Delay(50).ContinueWith(_ =>
                     {
                         keybd_event(byteKey, code, 2, 0);
                     });
                     return DateTime.Now.AddMilliseconds(100);
+                }
+
+                int xHold = (int)Math.Round(genshinWindowWdith * scaleHoldX) + genshinWindowX;
+                int yHold = (int)Math.Round(genshinWindowHeight * scaleHoldY) + genshinWindowY;
+                int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.3)) + genshinWindowY;
+
+                var colorHold = bmp.GetPixel(xHold, yHold);
+                var colorTail = bmp.GetPixel(xHold, yTail);
+
+                if (colorHold.R > 240 && colorHold.G > 240 && colorHold.B > 230 && colorTail.B == 255)
+                {
+                    keybd_event(byteKey, code, 1, 0);
+                    holding = true;
+                    BeginInvoke(new Action(() => debugTextBox.AppendText($"按住按键:{key} ----{DateTime.Now}\r\n")));
+                    return DateTime.Now.AddMinutes(500);
                 }
             }
             return DateTime.Now;
