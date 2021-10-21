@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -10,11 +12,20 @@ namespace GenshinBalladsOfBreezeAider
 {
     public partial class frmMain : Form
     {
-        [DllImport("user32.dll", EntryPoint = "FindWindow", CharSet = CharSet.Auto)]
-        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+        private int genshinWindowX = 0;
+        private int genshinWindowY = 0;
+        private int genshinWindowWdith = 0;
+        private int genshinWindowHeight = 0;
+        private bool working = false;
 
+        #region -- 按键钩子 --
         [DllImport("user32.dll", EntryPoint = "keybd_event")]
         public static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+        #endregion --按键钩子 --
+
+        #region -- 窗口钩子 --
+        [DllImport("user32.dll", EntryPoint = "FindWindow", CharSet = CharSet.Auto)]
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 
         [DllImport("user32.dll")]
         private static extern int GetWindowRect(IntPtr hwnd, out Rectangle lpRect);
@@ -35,21 +46,13 @@ namespace GenshinBalladsOfBreezeAider
         const int DESKTOPHORZRES = 118;
 
         private IntPtr hwndGenshin = IntPtr.Zero;
+        #endregion -- 窗口钩子 --
 
-        private int genshinWindowX = 0;
-        private int genshinWindowY = 0;
-        private int genshinWindowWdith = 0;
-        private int genshinWindowHeight = 0;
-        private bool working = false;
-
-#if DEBUG //-- 调试用系统钩子 --
+        #region -- 按键监听钩子 --
         protected delegate int HookProc(int nCode, int wParam, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         protected static extern int SetWindowsHookEx(int idHook, HookProc lpfn, IntPtr hMod, int dwThreadId);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        protected static extern int CallNextHookEx(int idHook, int nCode, int wParam, IntPtr lParam);
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall, SetLastError = true)]
         protected static extern int UnhookWindowsHookEx(int idHook);
@@ -66,7 +69,7 @@ namespace GenshinBalladsOfBreezeAider
 
         protected int _handleToHook;
         protected HookProc _hookCallback;
-#endif  //-- 调试用系统钩子 --
+        #endregion -- 按键监听钩子 --
 
         public static float DpiScaleX
         {
@@ -98,14 +101,20 @@ namespace GenshinBalladsOfBreezeAider
 #if DEBUG
             btnDebugScreenshot.Visible = true;
             debugTextBox.Visible = true;
-
+#endif
             _hookCallback = new HookProc(HookCallbackProcedure);
             _handleToHook = SetWindowsHookEx(13, _hookCallback, Marshal.GetHINSTANCE(Assembly.GetExecutingAssembly().GetModules()[0]), 0);
-#endif
+
             FindGenshinProcess();
         }
 
-#if DEBUG
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            UnhookWindowsHookEx(_handleToHook);
+            Process.GetCurrentProcess().Kill();
+            base.OnClosing(e);
+        }
+
         private int HookCallbackProcedure(int nCode, int wParam, IntPtr lParam)
         {
             KeyboardHookStruct keyboardHookStruct = (KeyboardHookStruct)Marshal.PtrToStructure(lParam, typeof(KeyboardHookStruct));
@@ -126,7 +135,6 @@ namespace GenshinBalladsOfBreezeAider
             }
             return 0;
         }
-#endif
 
         private void FindGenshinProcess()
         {
@@ -155,27 +163,23 @@ namespace GenshinBalladsOfBreezeAider
                                 lblStatus.ForeColor = Color.Black;
                             }
 
-                            float dpiX = DpiScaleX;
-                            float dpiY = DpiScaleY;
-
-                            if (windowRect.X < -16000)  //全屏
+                            if (windowRect.X < -16000 || (windowRect.X == 0 && windowRect.Y == 0 && windowRect.Width == Screen.PrimaryScreen.Bounds.Width && windowRect.Height == Screen.PrimaryScreen.Bounds.Height))  //全屏
                             {
                                 genshinWindowX = 0;
                                 genshinWindowY = 0;
-                                genshinWindowWdith = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * dpiX);
+                                genshinWindowWdith = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * DpiScaleX);
                                 genshinWindowHeight = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * DpiScaleY);
 
                                 lblWindowType.Text = "全屏";
                                 lblWindowLocation.Text = $"(0,0)";
-
                             }
                             else  //窗口化
                             {
                                 Rectangle tempRect = new Rectangle(windowRect.X, windowRect.Y, windowRect.Width - windowRect.X, windowRect.Height - windowRect.Y);
                                 Rectangle rect = new Rectangle(tempRect.X + (tempRect.Width - clientRect.Width) - 3, tempRect.Y + (tempRect.Height - clientRect.Height) - 3, clientRect.Width, clientRect.Height);
 
-                                if (dpiX > 1 || DpiScaleY > 1)
-                                    rect = new Rectangle((int)Math.Round(rect.X * dpiX), (int)Math.Round(rect.Y * dpiY), (int)Math.Round(rect.Width * dpiX), (int)Math.Round(rect.Height * dpiY));
+                                if (DpiScaleX > 1 || DpiScaleY > 1)
+                                    rect = new Rectangle((int)Math.Round(rect.X * DpiScaleX), (int)Math.Round(rect.Y * DpiScaleY), (int)Math.Round(rect.Width * DpiScaleX), (int)Math.Round(rect.Height * DpiScaleY));
 
                                 genshinWindowX = rect.X;
                                 genshinWindowY = rect.Y;
@@ -219,14 +223,12 @@ namespace GenshinBalladsOfBreezeAider
                         {
                         }
                     }));
+                    Task.Delay(100).Wait();
                 }
             });
         }
 
-        private void btnStart_Click(object sender, EventArgs e)
-        {
-            Start();
-        }
+        private void btnStart_Click(object sender, EventArgs e) => Start();
 
         private void Start()
         {
@@ -248,14 +250,11 @@ namespace GenshinBalladsOfBreezeAider
             }
             Task.Run(() =>
             {
-                float dpiX = DpiScaleX;
-                float dpiY = DpiScaleY;
-
                 Dictionary<Keys, DateTime> dicKeysNextPressTime = new Dictionary<Keys, DateTime>();
 
-                int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * dpiX);
-                int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * dpiY);
-                Size s = new Size(width, height);
+                int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * DpiScaleX);
+                int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * DpiScaleY);
+                Size size = new Size(width, height);
 
                 bool wHolding = false, sHolding = false, aHolding = false, dHolding = false, iHolding = false, kHolding = false, jHolding = false, lHolding = false;
 
@@ -263,7 +262,7 @@ namespace GenshinBalladsOfBreezeAider
                 {
                     Bitmap memoryImage = new Bitmap(width, height);
                     Graphics memoryGraphics = Graphics.FromImage(memoryImage);
-                    memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
+                    memoryGraphics.CopyFromScreen(0, 0, 0, 0, size);
 
                     StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.37685, Keys.W, 0.2526, 0.461, ref wHolding);
                     StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.823148, Keys.S, 0.253125, 0.773, ref sHolding);
@@ -287,28 +286,22 @@ namespace GenshinBalladsOfBreezeAider
             if (dicKeysNextPressTime.ContainsKey(key))
             {
                 if (dicKeysNextPressTime[key] < DateTime.Now || holding)
-                {
                     dicKeysNextPressTime[key] = StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding);
-                }
             }
             else
-            {
                 dicKeysNextPressTime.Add(key, StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding));
-            }
         }
 
         private void SaveDebugImage()
         {
-            float dpiX = DpiScaleX;
-            float dpiY = DpiScaleY;
-
-            int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * dpiX);
-            int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * dpiY);
+            int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * DpiScaleX);
+            int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * DpiScaleY);
             Size s = new Size(width, height);
             Bitmap memoryImage = new Bitmap(width, height);
             Graphics memoryGraphics = Graphics.FromImage(memoryImage);
             memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
 
+            #region -- 点按判定位置 --
             //DrawDebugLine(0.253125, 0.37685, memoryImage);
             //DrawDebugLine(0.253125, 0.823148, memoryImage);
             //DrawDebugLine(0.127083, 0.6, memoryImage);
@@ -317,16 +310,20 @@ namespace GenshinBalladsOfBreezeAider
             //DrawDebugLine(0.74739583, 0.823148, memoryImage);
             //DrawDebugLine(0.62135416, 0.6, memoryImage);
             //DrawDebugLine(0.872917, 0.6, memoryImage);
+            #endregion -- 点按判定位置 --
 
-            DrawDebugLine(0.2526, 0.461 - 0.3, memoryImage);
-            DrawDebugLine(0.165625, 0.616 - 0.3, memoryImage);
-            DrawDebugLine(0.253125, 0.773 - 0.3, memoryImage);
-            DrawDebugLine(0.340625, 0.616 - 0.3, memoryImage);
-            DrawDebugLine(0.7475, 0.461 - 0.3, memoryImage);
-            DrawDebugLine(0.659, 0.616 - 0.3, memoryImage);
-            DrawDebugLine(0.7475, 0.773 - 0.3, memoryImage);
-            DrawDebugLine(0.835, 0.616 - 0.3, memoryImage);
-            memoryImage.Save(Application.StartupPath + @"\test.jpg");
+            #region -- 长按判定位置 --
+            //DrawDebugLine(0.2526, 0.461 - 0.15, memoryImage);
+            //DrawDebugLine(0.165625, 0.616 - 0.15, memoryImage);
+            //DrawDebugLine(0.253125, 0.773 - 0.15, memoryImage);
+            //DrawDebugLine(0.340625, 0.616 - 0.15, memoryImage);
+            //DrawDebugLine(0.7475, 0.461 - 0.15, memoryImage);
+            //DrawDebugLine(0.659, 0.616 - 0.15, memoryImage);
+            //DrawDebugLine(0.7475, 0.773 - 0.15, memoryImage);
+            //DrawDebugLine(0.835, 0.616 - 0.15, memoryImage);
+            #endregion -- 长按判定位置 --
+
+            memoryImage.Save(Application.StartupPath + @"\Screenshot.jpg");
         }
 
         private void DrawDebugLine(double scaleX, double scaleY, Bitmap highDpiScreenshot)
@@ -334,13 +331,9 @@ namespace GenshinBalladsOfBreezeAider
             int xw = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
             int yw = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
             for (int i = 0; i < highDpiScreenshot.Width; i++)
-            {
                 highDpiScreenshot.SetPixel(i, yw, Color.Red);
-            }
             for (int i = 0; i < highDpiScreenshot.Height; i++)
-            {
                 highDpiScreenshot.SetPixel(xw, i, Color.Red);
-            }
         }
 
         private DateTime StartAutoPressKey(Bitmap bmp, double scaleX, double scaleY, Keys key, double scaleHoldX, double scaleHoldY, ref bool holding)
@@ -363,16 +356,17 @@ namespace GenshinBalladsOfBreezeAider
             {
                 int xHold = (int)Math.Round(genshinWindowWdith * scaleHoldX) + genshinWindowX;
                 int yHold = (int)Math.Round(genshinWindowHeight * scaleHoldY) + genshinWindowY;
-                int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.3)) + genshinWindowY;
+                int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.15)) + genshinWindowY;
 
                 var colorHold = bmp.GetPixel(xHold, yHold);
                 var colorTail = bmp.GetPixel(xHold, yTail);
 
-                if (colorHold.R > 220 && colorHold.G > 220 && colorHold.B > 210 && colorTail.B < 250 )
+                if (colorHold.R > 240 && colorHold.G > 220 && colorHold.B > 210 && colorTail.B < 250 )
                 {
                     keybd_event(byteKey, code, 2, 0);
                     holding = false;
-                    BeginInvoke(new Action(() => debugTextBox.AppendText($"弹起按键:{key} ----{DateTime.Now}\r\n")));
+                    if (debugTextBox.Visible)
+                        BeginInvoke(new Action(() => debugTextBox.AppendText($"弹起按键:{key} ----{DateTime.Now}\r\n")));
                     return DateTime.Now;
                 }
             }
@@ -386,19 +380,14 @@ namespace GenshinBalladsOfBreezeAider
                 {
                     keybd_event(byteKey, code, 0, 0);
                     if (debugTextBox.Visible)
-                    {
-                        Invoke(new Action(() => debugTextBox.AppendText($"点按按键{key}----{DateTime.Now}\r\n")));
-                    }
-                    Task.Delay(50).ContinueWith(_ =>
-                    {
-                        keybd_event(byteKey, code, 2, 0);
-                    });
-                    return DateTime.Now.AddMilliseconds(100);
+                        BeginInvoke(new Action(() => debugTextBox.AppendText($"点按按键{key}----{DateTime.Now}\r\n")));
+                    Task.Delay(50).ContinueWith(_ => keybd_event(byteKey, code, 2, 0));
+                    return DateTime.Now.AddMilliseconds(200);
                 }
 
                 int xHold = (int)Math.Round(genshinWindowWdith * scaleHoldX) + genshinWindowX;
                 int yHold = (int)Math.Round(genshinWindowHeight * scaleHoldY) + genshinWindowY;
-                int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.3)) + genshinWindowY;
+                int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.15)) + genshinWindowY;
 
                 var colorHold = bmp.GetPixel(xHold, yHold);
                 var colorTail = bmp.GetPixel(xHold, yTail);
@@ -407,7 +396,8 @@ namespace GenshinBalladsOfBreezeAider
                 {
                     keybd_event(byteKey, code, 1, 0);
                     holding = true;
-                    BeginInvoke(new Action(() => debugTextBox.AppendText($"按住按键:{key} ----{DateTime.Now}\r\n")));
+                    if (debugTextBox.Visible)
+                        BeginInvoke(new Action(() => debugTextBox.AppendText($"按住按键:{key} ----{DateTime.Now}\r\n")));
                     return DateTime.Now.AddMinutes(500);
                 }
             }

@@ -52,11 +52,11 @@ namespace GenshinBalladsOfBreezeAider
             // btnStart
             // 
             this.btnStart.Enabled = false;
-            this.btnStart.Location = new System.Drawing.Point(122, 240);
+            this.btnStart.Location = new System.Drawing.Point(122, 241);
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(100, 30);
+            this.btnStart.Size = new System.Drawing.Size(120, 30);
             this.btnStart.TabIndex = 0;
-            this.btnStart.Text = "开始自动演奏";
+            this.btnStart.Text = "开始自动演奏(F10)";
             this.btnStart.UseVisualStyleBackColor = true;
             this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
