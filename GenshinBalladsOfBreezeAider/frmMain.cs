@@ -235,7 +235,7 @@ namespace GenshinBalladsOfBreezeAider
             if (working)
             {
                 working = false;
-                btnStart.Text = "开始自动演奏";
+                btnStart.Text = "开始自动演奏(F10)";
                 lblStatus.Text = $"已找到原神进程，未开始自动演奏";
                 lblStatus.ForeColor = Color.Black;
                 FindGenshinProcess();
@@ -243,10 +243,11 @@ namespace GenshinBalladsOfBreezeAider
             }
             else
             {
+                debugIndex = 1;
                 working = true;
                 lblStatus.Text = $"已开始自动演奏";
                 lblStatus.ForeColor = Color.Green;
-                btnStart.Text = "停止自动演奏";
+                btnStart.Text = "停止自动演奏(F10)";
             }
             Task.Run(() =>
             {
@@ -254,7 +255,6 @@ namespace GenshinBalladsOfBreezeAider
 
                 int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * DpiScaleX);
                 int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * DpiScaleY);
-                Size size = new Size(width, height);
 
                 bool wHolding = false, sHolding = false, aHolding = false, dHolding = false, iHolding = false, kHolding = false, jHolding = false, lHolding = false;
 
@@ -262,7 +262,7 @@ namespace GenshinBalladsOfBreezeAider
                 {
                     Bitmap memoryImage = new Bitmap(width, height);
                     Graphics memoryGraphics = Graphics.FromImage(memoryImage);
-                    memoryGraphics.CopyFromScreen(0, 0, 0, 0, size);
+                    memoryGraphics.CopyFromScreen(0, 0, 0, 0, new Size(width, height));
 
                     StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.37685, Keys.W, 0.2526, 0.461, ref wHolding);
                     StartAutoPressKeyAndRecordCD(dicKeysNextPressTime, memoryImage, 0.253125, 0.823148, Keys.S, 0.253125, 0.773, ref sHolding);
@@ -285,55 +285,61 @@ namespace GenshinBalladsOfBreezeAider
         {
             if (dicKeysNextPressTime.ContainsKey(key))
             {
-                if (dicKeysNextPressTime[key] < DateTime.Now || holding)
+                if (dicKeysNextPressTime[key] < DateTime.Now)
                     dicKeysNextPressTime[key] = StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding);
             }
             else
                 dicKeysNextPressTime.Add(key, StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding));
         }
 
-        private void SaveDebugImage()
+        private int debugIndex = 1;
+        private void SaveDebugImage(Keys onlyDrawKey = Keys.None, string debugText = "")
         {
             int width = (int)Math.Round(Screen.PrimaryScreen.Bounds.Width * DpiScaleX);
             int height = (int)Math.Round(Screen.PrimaryScreen.Bounds.Height * DpiScaleY);
-            Size s = new Size(width, height);
+            Size size = new Size(width, height);
             Bitmap memoryImage = new Bitmap(width, height);
             Graphics memoryGraphics = Graphics.FromImage(memoryImage);
-            memoryGraphics.CopyFromScreen(0, 0, 0, 0, s);
+            memoryGraphics.CopyFromScreen(0, 0, 0, 0, size);
 
             #region -- 点按判定位置 --
-            //DrawDebugLine(0.253125, 0.37685, memoryImage);
-            //DrawDebugLine(0.253125, 0.823148, memoryImage);
-            //DrawDebugLine(0.127083, 0.6, memoryImage);
-            //DrawDebugLine(0.378125, 0.6, memoryImage);
-            //DrawDebugLine(0.74739583, 0.37685, memoryImage);
-            //DrawDebugLine(0.74739583, 0.823148, memoryImage);
-            //DrawDebugLine(0.62135416, 0.6, memoryImage);
-            //DrawDebugLine(0.872917, 0.6, memoryImage);
+            //DrawDebugLine(0.253125, 0.37685, memoryImage, Keys.W);
+            //DrawDebugLine(0.253125, 0.823148, memoryImage, Keys.S);
+            //DrawDebugLine(0.127083, 0.6, memoryImage, Keys.A);
+            //DrawDebugLine(0.378125, 0.6, memoryImage, Keys.D);
+            //DrawDebugLine(0.74739583, 0.37685, memoryImage, Keys.I);
+            //DrawDebugLine(0.74739583, 0.823148, memoryImage, Keys.J);
+            //DrawDebugLine(0.62135416, 0.6, memoryImage, Keys.K);
+            //DrawDebugLine(0.872917, 0.6, memoryImage, Keys.L);
             #endregion -- 点按判定位置 --
 
             #region -- 长按判定位置 --
-            //DrawDebugLine(0.2526, 0.461 - 0.15, memoryImage);
-            //DrawDebugLine(0.165625, 0.616 - 0.15, memoryImage);
-            //DrawDebugLine(0.253125, 0.773 - 0.15, memoryImage);
-            //DrawDebugLine(0.340625, 0.616 - 0.15, memoryImage);
-            //DrawDebugLine(0.7475, 0.461 - 0.15, memoryImage);
-            //DrawDebugLine(0.659, 0.616 - 0.15, memoryImage);
-            //DrawDebugLine(0.7475, 0.773 - 0.15, memoryImage);
-            //DrawDebugLine(0.835, 0.616 - 0.15, memoryImage);
+            //DrawDebugLine(0.2526, 0.461 - 0.15, memoryImage, Keys.W);
+            //DrawDebugLine(0.165625, 0.616 - 0.15, memoryImage, Keys.S);
+            //DrawDebugLine(0.253125, 0.773 - 0.15, memoryImage, Keys.A);
+            //DrawDebugLine(0.340625, 0.616 - 0.15, memoryImage, Keys.D);
+            //DrawDebugLine(0.7475, 0.461 - 0.15, memoryImage, Keys.I);
+            //DrawDebugLine(0.659, 0.616 - 0.15, memoryImage, Keys.J);
+            //DrawDebugLine(0.7475, 0.773 - 0.15, memoryImage, Keys.K);
+            //DrawDebugLine(0.835, 0.616 - 0.15, memoryImage, Keys.L);
             #endregion -- 长按判定位置 --
 
-            memoryImage.Save(Application.StartupPath + @"\Screenshot.jpg");
-        }
+            memoryImage.Save(Application.StartupPath + @$"\Screenshot{debugIndex++}.jpg");
 
-        private void DrawDebugLine(double scaleX, double scaleY, Bitmap highDpiScreenshot)
-        {
-            int xw = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
-            int yw = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
-            for (int i = 0; i < highDpiScreenshot.Width; i++)
-                highDpiScreenshot.SetPixel(i, yw, Color.Red);
-            for (int i = 0; i < highDpiScreenshot.Height; i++)
-                highDpiScreenshot.SetPixel(xw, i, Color.Red);
+            void DrawDebugLine(double scaleX, double scaleY, Bitmap highDpiScreenshot, Keys key)
+            {
+                if (onlyDrawKey != Keys.None && onlyDrawKey != key)
+                    return;
+                int xw = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
+                int yw = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
+                for (int i = xw - 25; i < xw + 25; i++)
+                    highDpiScreenshot.SetPixel(i, yw, Color.Red);
+                for (int i = yw - 25; i < yw + 25; i++)
+                    highDpiScreenshot.SetPixel(xw, i, Color.Red);
+                Graphics g = Graphics.FromImage(highDpiScreenshot);
+                g.DrawString(debugText, new Font("宋体", 12), Brushes.Red, xw, yw);
+                g.Dispose();
+            }
         }
 
         private DateTime StartAutoPressKey(Bitmap bmp, double scaleX, double scaleY, Keys key, double scaleHoldX, double scaleHoldY, ref bool holding)
@@ -354,6 +360,7 @@ namespace GenshinBalladsOfBreezeAider
 
             if (holding)
             {
+                //弹起
                 int xHold = (int)Math.Round(genshinWindowWdith * scaleHoldX) + genshinWindowX;
                 int yHold = (int)Math.Round(genshinWindowHeight * scaleHoldY) + genshinWindowY;
                 int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.15)) + genshinWindowY;
@@ -361,17 +368,19 @@ namespace GenshinBalladsOfBreezeAider
                 var colorHold = bmp.GetPixel(xHold, yHold);
                 var colorTail = bmp.GetPixel(xHold, yTail);
 
-                if (colorHold.R > 240 && colorHold.G > 220 && colorHold.B > 210 && colorTail.B < 250 )
+                if (colorHold.R > 240 && colorHold.G > 210 && colorHold.B > 210 && colorTail.B < 250)
                 {
-                    keybd_event(byteKey, code, 2, 0);
+                    Task.Run(() => keybd_event(byteKey, code, 2, 0));
                     holding = false;
                     if (debugTextBox.Visible)
                         BeginInvoke(new Action(() => debugTextBox.AppendText($"弹起按键:{key} ----{DateTime.Now}\r\n")));
+                    //SaveDebugImage(key, $"弹起{key}({colorHold.R},{colorHold.G},{colorHold.B})");
                     return DateTime.Now;
                 }
             }
             else
             {
+                //点按
                 int x = (int)Math.Round(genshinWindowWdith * scaleX) + genshinWindowX;
                 int y = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
 
@@ -382,9 +391,11 @@ namespace GenshinBalladsOfBreezeAider
                     if (debugTextBox.Visible)
                         BeginInvoke(new Action(() => debugTextBox.AppendText($"点按按键{key}----{DateTime.Now}\r\n")));
                     Task.Delay(50).ContinueWith(_ => keybd_event(byteKey, code, 2, 0));
+                    //SaveDebugImage(key, $"点按{key}({color.R},{color.G},{color.B})");
                     return DateTime.Now.AddMilliseconds(200);
                 }
 
+                //长按
                 int xHold = (int)Math.Round(genshinWindowWdith * scaleHoldX) + genshinWindowX;
                 int yHold = (int)Math.Round(genshinWindowHeight * scaleHoldY) + genshinWindowY;
                 int yTail = (int)Math.Round(genshinWindowHeight * (scaleHoldY - 0.15)) + genshinWindowY;
@@ -396,9 +407,11 @@ namespace GenshinBalladsOfBreezeAider
                 {
                     keybd_event(byteKey, code, 1, 0);
                     holding = true;
+
                     if (debugTextBox.Visible)
                         BeginInvoke(new Action(() => debugTextBox.AppendText($"按住按键:{key} ----{DateTime.Now}\r\n")));
-                    return DateTime.Now.AddMinutes(500);
+                    //SaveDebugImage(key, $"长按{key}({colorHold.R},{colorHold.G},{colorHold.B}),({colorTail.R},{colorTail.G},{colorTail.B})");
+                    return DateTime.Now.AddMilliseconds(500);
                 }
             }
             return DateTime.Now;
