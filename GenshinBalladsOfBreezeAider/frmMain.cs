@@ -258,13 +258,6 @@ namespace GenshinBalladsOfBreezeAider
 
                 bool wHolding = false, sHolding = false, aHolding = false, dHolding = false, iHolding = false, kHolding = false, jHolding = false, lHolding = false;
 
-                (double aTailX, double aTailY) = Rotate(376 +  190, 731, 376 , 731, -45);
-                (double sTailX, double sTailY) = Rotate(573 + 190, 819, 573, 819, -60);
-                (double dTailX, double dTailY) = Rotate(787  + 190, 870, 787 , 870, -75);
-                (double jTailX, double jTailY) = Rotate(1133 + 190, 870, 1133, 870, -105);
-                (double kTailX, double kTailY) = Rotate(1347 + 190, 819, 1347, 819, -120);
-                (double lTailX, double lTailY) = Rotate(1545 + 190, 731, 1545, 731, -135);
-
                 double aScaleX = 376 / 1920.0;
                 double sScaleX = 573 / 1920.0;
                 double dScaleX = 787 / 1920.0;
@@ -278,19 +271,26 @@ namespace GenshinBalladsOfBreezeAider
                 double kScaleY = 819 / 1080.0;
                 double lScaleY = 731 / 1080.0;
 
-                double aScaleTailX = aTailX / 1920.0;
-                double sScaleTailX = sTailX / 1920.0;
-                double dScaleTailX = dTailX / 1920.0;
-                double jScaleTailX = jTailX / 1920.0;
-                double kScaleTailX = kTailX / 1920.0;
-                double lScaleTailX = lTailX / 1920.0;
+                //(double aTailX, double aTailY) = Rotate(376 + 190, 731, 376, 731, -45);
+                //(double sTailX, double sTailY) = Rotate(573 + 190, 819, 573, 819, -60);
+                //(double dTailX, double dTailY) = Rotate(787 + 190, 870, 787, 870, -75);
+                //(double jTailX, double jTailY) = Rotate(1133 + 190, 870, 1133, 870, -105);
+                //(double kTailX, double kTailY) = Rotate(1347 + 190, 819, 1347, 819, -120);
+                //(double lTailX, double lTailY) = Rotate(1545 + 190, 731, 1545, 731, -135);
 
-                double aScaleTailY = aTailY / 1080.0;
-                double sScaleTailY = sTailY / 1080.0;
-                double dScaleTailY = dTailY / 1080.0;
-                double jScaleTailY = jTailY / 1080.0;
-                double kScaleTailY = kTailY / 1080.0;
-                double lScaleTailY = lTailY / 1080.0;
+                //double aScaleTailX = aTailX / 1920.0;
+                //double sScaleTailX = sTailX / 1920.0;
+                //double dScaleTailX = dTailX / 1920.0;
+                //double jScaleTailX = jTailX / 1920.0;
+                //double kScaleTailX = kTailX / 1920.0;
+                //double lScaleTailX = lTailX / 1920.0;
+
+                //double aScaleTailY = aTailY / 1080.0;
+                //double sScaleTailY = sTailY / 1080.0;
+                //double dScaleTailY = dTailY / 1080.0;
+                //double jScaleTailY = jTailY / 1080.0;
+                //double kScaleTailY = kTailY / 1080.0;
+                //double lScaleTailY = lTailY / 1080.0;
 
                 while (working)
                 {
@@ -310,12 +310,12 @@ namespace GenshinBalladsOfBreezeAider
                     #endregion -- 镜花听世/风物之歌 --
 
                     #region -- 荒 泷 极 上 盛 世 豪 鼓 大 祭 典 --
-                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, aScaleX, aScaleY , aScaleTailX, aScaleTailY, Keys.A, ref aHolding);
-                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, sScaleX, sScaleY , sScaleTailX, sScaleTailY, Keys.S, ref sHolding);
-                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, dScaleX, dScaleY , dScaleTailX, dScaleTailY, Keys.D, ref dHolding);
-                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, jScaleX, jScaleY , jScaleTailX, jScaleTailY, Keys.J, ref jHolding);
-                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, kScaleX, kScaleY , kScaleTailX, kScaleTailY, Keys.K, ref kHolding);
-                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, lScaleX, lScaleY , lScaleTailX, lScaleTailY, Keys.L, ref lHolding);
+                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, aScaleX, aScaleY, Keys.A, ref aHolding);
+                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, sScaleX, sScaleY, Keys.S, ref sHolding);
+                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, dScaleX, dScaleY, Keys.D, ref dHolding);
+                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, jScaleX, jScaleY, Keys.J, ref jHolding);
+                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, kScaleX, kScaleY, Keys.K, ref kHolding);
+                    StartAutoPressKeyAndRecordCD2(dicKeysNextPressTime, memoryImage, lScaleX, lScaleY, Keys.L, ref lHolding);
                     #endregion -- 荒 泷 极 上 盛 世 豪 鼓 大 祭 典 --
 
                     memoryGraphics.Dispose();
@@ -338,15 +338,15 @@ namespace GenshinBalladsOfBreezeAider
                 dicKeysNextPressTime.Add(key, StartAutoPressKey(bmp, scaleX, scaleY, key, scaleHoldX, scaleHoldY, ref holding));
         }
 
-        private void StartAutoPressKeyAndRecordCD2(Dictionary<Keys, DateTime> dicKeysNextPressTime, Bitmap bmp, double scaleX, double scaleY, double scaleTailX, double scaleTailY, Keys key, ref bool holding)
+        private void StartAutoPressKeyAndRecordCD2(Dictionary<Keys, DateTime> dicKeysNextPressTime, Bitmap bmp, double scaleX, double scaleY, Keys key, ref bool holding)
         {
             if (dicKeysNextPressTime.ContainsKey(key))
             {
                 if (dicKeysNextPressTime[key] < DateTime.Now)
-                    dicKeysNextPressTime[key] = StartAutoPressKey2(bmp, scaleX, scaleY, scaleTailX, scaleTailY, key, ref holding);
+                    dicKeysNextPressTime[key] = StartAutoPressKey2(bmp, scaleX, scaleY, key, ref holding);
             }
             else
-                dicKeysNextPressTime.Add(key, StartAutoPressKey2(bmp, scaleX, scaleY, scaleTailX, scaleTailY, key, ref holding));
+                dicKeysNextPressTime.Add(key, StartAutoPressKey2(bmp, scaleX, scaleY, key, ref holding));
         }
 
         private (double x, double y) Rotate(double targetX, double targetY, double centerX, double centerY, double angle)
@@ -506,7 +506,7 @@ namespace GenshinBalladsOfBreezeAider
         }
 
 
-        private DateTime StartAutoPressKey2(Bitmap bmp, double scaleX, double scaleY, double scaleTailX, double scaleTailY, Keys key, ref bool holding)
+        private DateTime StartAutoPressKey2(Bitmap bmp, double scaleX, double scaleY, Keys key, ref bool holding)
         {
             byte byteKey = (byte)key;
             byte code = key switch
@@ -527,36 +527,7 @@ namespace GenshinBalladsOfBreezeAider
             int y = (int)Math.Round(genshinWindowHeight * scaleY) + genshinWindowY;
 
             Color color = bmp.GetPixel(x, y);
-            //if (holding)
-            //{
-            //    //弹起
-            //    int xTail = (int)Math.Round(genshinWindowWdith * scaleTailX) + genshinWindowX;
-            //    int yTail = (int)Math.Round(genshinWindowHeight * scaleTailY) + genshinWindowY;
-            //    Color colorTail = bmp.GetPixel(xTail, yTail);
-            //    if (colorTail.B > 245)
-            //    {
-            //        Task.Run(() => keybd_event(byteKey, code, 2, 0));
-            //        holding = false;
-            //        if (debugTextBox.Visible)
-            //            BeginInvoke(new Action(() => debugTextBox.AppendText($"弹起按键:{key} ----{DateTime.Now}\r\n")));
-            //        //SaveDebugImage();
-            //        return DateTime.Now.AddMilliseconds(100);
-            //    }
-            //}
-            //else 
-            //if (color.R > 160 && color.G < 190 && color.B > 220)
-            //{
-            //    keybd_event(byteKey, code, 2, 0);
-            //    Task.Run(() => keybd_event(byteKey, code, 1, 0));
-            //    holding = true;
-
-            //    if (debugTextBox.Visible)
-            //        BeginInvoke(new Action(() => debugTextBox.AppendText($"按住按键:{key} ----{DateTime.Now}\r\n")));
-            //    //SaveDebugImage();
-            //    return DateTime.Now.AddMilliseconds(200);
-            //}
-            //else 
-            if (color.B < 160)
+            if (color.B < 200)
             {
                 keybd_event(byteKey, code, 0, 0);
                 if (debugTextBox.Visible)
